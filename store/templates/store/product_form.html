@@ -1,0 +1,497 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}{% if product %}Edit {{ product.name }}{% else %}Add new product to inventory{% endif %}{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 25px 30px;
+        border-bottom: none;
+    }
+
+    .form-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .form-body {
+        padding: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        font-size: 15px;
+        transition: var(--transition);
+        background: #fafafa;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        background: white;
+        outline: none;
+    }
+
+    .form-select {
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        font-size: 15px;
+        transition: var(--transition);
+        background: #fafafa url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") no-repeat right 12px center/16px 16px;
+    }
+
+    .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        background-color: white;
+        outline: none;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon .form-control {
+        padding-left: 45px;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 180px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+        font-size: 16px;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .error-message i {
+        font-size: 12px;
+    }
+
+    .form-control.is-invalid {
+        border-color: #dc3545;
+        background: #fff5f5;
+    }
+
+    .form-control.is-invalid:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+    }
+
+    .help-text {
+        font-size: 13px;
+        color: var(--text-light);
+        margin-top: 5px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        border: none;
+        padding: 14px 30px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        transition: var(--transition);
+        flex: 1;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(25, 118, 210, 0.3);
+    }
+
+    .btn-secondary {
+        background: white;
+        border: 2px solid var(--border);
+        color: var(--text);
+        padding: 14px 30px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        text-decoration: none;
+        text-align: center;
+        transition: var(--transition);
+        flex: 1;
+    }
+
+    .btn-secondary:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    .price-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .profit-preview {
+        background: var(--primary-light);
+        padding: 20px;
+        border-radius: var(--radius);
+        margin-top: 10px;
+        display: none;
+    }
+
+    .profit-preview.active {
+        display: block;
+    }
+
+    .profit-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .profit-value {
+        font-weight: 600;
+    }
+
+    .profit-value.positive {
+        color: var(--success);
+    }
+
+    .profit-value.negative {
+        color: #dc3545;
+    }
+
+    /* ========== RESPONSIVE DESIGN ========== */
+    
+    @media (max-width: 768px) {
+        .form-header {
+            padding: 20px;
+        }
+        
+        .form-body {
+            padding: 20px;
+        }
+        
+        .price-row {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .form-header {
+            padding: 15px;
+        }
+        
+        .form-body {
+            padding: 15px;
+        }
+        
+        .form-header h2 {
+            font-size: 20px;
+        }
+        
+        .btn-primary,
+        .btn-secondary {
+            padding: 12px 20px;
+        }
+    }
+</style>
+
+<div class="form-container">
+    <div class="form-header">
+        <h2>
+            <i class="fas {% if product %}fa-edit{% else %}fa-plus-circle{% endif %}"></i>
+            {{ title }}
+        </h2>
+    </div>
+    
+    <div class="form-body">
+        <form method="post" id="productForm">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.brand.id_for_label }}" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Brand
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-tag input-icon"></i>
+                            {{ form.brand }}
+                        </div>
+                        {% if form.brand.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ form.brand.errors }}
+                            </div>
+                        {% endif %}
+                        <div class="help-text">Manufacturer brand (e.g., Honda, Yamaha)</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">
+                            <i class="fas fa-cube me-1"></i>Product Name
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-cube input-icon"></i>
+                            {{ form.name }}
+                        </div>
+                        {% if form.name.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ form.name.errors }}
+                            </div>
+                        {% endif %}
+                        <div class="help-text">Specific product name and description</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Details -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.part_number.id_for_label }}" class="form-label">
+                            <i class="fas fa-barcode me-1"></i>Part Number
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-barcode input-icon"></i>
+                            {{ form.part_number }}
+                        </div>
+                        {% if form.part_number.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ form.part_number.errors }}
+                            </div>
+                        {% endif %}
+                        <div class="help-text">Manufacturer part number</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.motorcycle_model.id_for_label }}" class="form-label">
+                            <i class="fas fa-motorcycle me-1"></i>Motorcycle Model
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-motorcycle input-icon"></i>
+                            {{ form.motorcycle_model }}
+                        </div>
+                        {% if form.motorcycle_model.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ form.motorcycle_model.errors }}
+                            </div>
+                        {% endif %}
+                        <div class="help-text">Compatible motorcycle models</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Information -->
+            <div class="price-row">
+                <div class="form-group">
+                    <label for="{{ form.cost_price.id_for_label }}" class="form-label">
+                        <i class="fas fa-money-bill-wave me-1"></i>Cost Price (TSh)
+                    </label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-money-bill-wave input-icon"></i>
+                        {{ form.cost_price }}
+                    </div>
+                    {% if form.cost_price.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ form.cost_price.errors }}
+                        </div>
+                    {% endif %}
+                    <div class="help-text">Purchase price from supplier</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.selling_price.id_for_label }}" class="form-label">
+                        <i class="fas fa-tag me-1"></i>Selling Price (TSh)
+                    </label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-tag input-icon"></i>
+                        {{ form.selling_price }}
+                    </div>
+                    {% if form.selling_price.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ form.selling_price.errors }}
+                        </div>
+                    {% endif %}
+                    <div class="help-text">Price for customers</div>
+                </div>
+            </div>
+
+            <!-- Profit Preview -->
+            <div class="profit-preview" id="profitPreview">
+                <div class="profit-item">
+                    <span>Profit Margin:</span>
+                    <span class="profit-value positive" id="profitMargin">0 TSh</span>
+                </div>
+                <div class="profit-item">
+                    <span>Profit Percentage:</span>
+                    <span class="profit-value positive" id="profitPercentage">0%</span>
+                </div>
+            </div>
+
+            <!-- Stock Information -->
+            <div class="form-group">
+                <label for="{{ form.quantity.id_for_label }}" class="form-label">
+                    <i class="fas fa-boxes me-1"></i>Initial Stock Quantity
+                </label>
+                <div class="input-with-icon">
+                    <i class="fas fa-boxes input-icon"></i>
+                    {{ form.quantity }}
+                </div>
+                {% if form.quantity.errors %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ form.quantity.errors }}
+                    </div>
+                {% endif %}
+                <div class="help-text">Number of units in stock</div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>
+                    {% if product %}Update Product{% else %}Save Product{% endif %}
+                </button>
+                <a href="{% url 'product_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const costPriceInput = document.getElementById('{{ form.cost_price.id_for_label }}');
+        const sellingPriceInput = document.getElementById('{{ form.selling_price.id_for_label }}');
+        const profitPreview = document.getElementById('profitPreview');
+        const profitMargin = document.getElementById('profitMargin');
+        const profitPercentage = document.getElementById('profitPercentage');
+
+        function calculateProfit() {
+            const cost = parseFloat(costPriceInput.value) || 0;
+            const selling = parseFloat(sellingPriceInput.value) || 0;
+            
+            if (cost > 0 && selling > 0) {
+                const margin = selling - cost;
+                const percentage = ((margin / cost) * 100).toFixed(1);
+                
+                profitMargin.textContent = margin.toLocaleString() + ' TSh';
+                profitPercentage.textContent = percentage + '%';
+                
+                // Update colors based on profit
+                if (margin > 0) {
+                    profitMargin.className = 'profit-value positive';
+                    profitPercentage.className = 'profit-value positive';
+                } else {
+                    profitMargin.className = 'profit-value negative';
+                    profitPercentage.className = 'profit-value negative';
+                }
+                
+                profitPreview.classList.add('active');
+            } else {
+                profitPreview.classList.remove('active');
+            }
+        }
+
+        // Calculate profit when prices change
+        costPriceInput.addEventListener('input', calculateProfit);
+        sellingPriceInput.addEventListener('input', calculateProfit);
+
+        // Initial calculation if values are pre-filled
+        calculateProfit();
+
+        // Add real-time validation
+        const form = document.getElementById('productForm');
+        const inputs = form.querySelectorAll('input, select');
+        
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.value.trim() === '') {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        });
+
+        // Form submission enhancement
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            inputs.forEach(input => {
+                if (input.hasAttribute('required') && input.value.trim() === '') {
+                    input.classList.add('is-invalid');
+                    isValid = false;
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                // Scroll to first error
+                const firstError = form.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

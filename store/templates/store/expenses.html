@@ -1,0 +1,807 @@
+{% extends 'base.html' %}
+
+{% block page_title %}New Expense{% endblock %}
+{% block page_subtitle %}Record a new expense transaction{% endblock %}
+
+{% block content %}
+<style>
+    .expense-container {
+        max-width: 700px;
+        margin: 30px auto;
+    }
+
+    .expense-card {
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        transition: var(--transition);
+    }
+
+    .expense-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.12);
+    }
+
+    .expense-card-header {
+        background: linear-gradient(135deg, #FF6B6B 0%, #EE5A52 100%);
+        color: white;
+        padding: 25px 30px;
+        text-align: center;
+    }
+
+    .expense-card-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .expense-card-body {
+        padding: 30px;
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .form-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control, .form-select, .form-textarea {
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        font-size: 15px;
+        transition: var(--transition);
+        background: #fafafa;
+        width: 100%;
+    }
+
+    .form-control:focus, .form-select:focus, .form-textarea:focus {
+        border-color: #FF6B6B;
+        box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        background: white;
+        outline: none;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon .form-control,
+    .input-with-icon .form-select {
+        padding-left: 45px;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+        font-size: 16px;
+        z-index: 1;
+    }
+
+    .input-with-currency .form-control {
+        padding-left: 70px;
+    }
+
+    .currency-symbol {
+        position: absolute;
+        left: 45px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text);
+        font-weight: 600;
+        z-index: 1;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .error-message i {
+        font-size: 12px;
+    }
+
+    .form-control.is-invalid,
+    .form-select.is-invalid,
+    .form-textarea.is-invalid {
+        border-color: #dc3545;
+        background: #fff5f5;
+    }
+
+    /* Expense Summary */
+    .expense-summary {
+        background: #FFF5F5;
+        padding: 20px;
+        border-radius: var(--radius);
+        margin-top: 10px;
+        border-left: 4px solid #FF6B6B;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 8px 0;
+    }
+
+    .summary-item:last-child {
+        margin-bottom: 0;
+        border-top: 1px solid var(--border);
+        padding-top: 12px;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .summary-label {
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    .summary-value {
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    .summary-value.total {
+        color: #EE5A52;
+        font-size: 18px;
+    }
+
+    /* Category Colors */
+    .category-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .category-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* Payment Method */
+    .payment-method-options {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .payment-method-option {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .payment-method-option input[type="radio"] {
+        display: none;
+    }
+
+    .payment-method-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 15px;
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: var(--transition);
+        text-align: center;
+        justify-content: center;
+    }
+
+    .payment-method-label:hover {
+        border-color: #FF6B6B;
+        background: #FFF5F5;
+    }
+
+    .payment-method-option input[type="radio"]:checked + .payment-method-label {
+        border-color: #FF6B6B;
+        background: #FF6B6B;
+        color: white;
+        font-weight: 600;
+    }
+
+    /* Receipt Upload */
+    .receipt-upload {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: var(--transition);
+        margin-top: 10px;
+    }
+
+    .receipt-upload:hover {
+        border-color: #FF6B6B;
+        background: #FFF5F5;
+    }
+
+    .receipt-upload i {
+        font-size: 48px;
+        color: var(--text-light);
+        margin-bottom: 15px;
+    }
+
+    .receipt-upload p {
+        margin: 0;
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    .receipt-upload small {
+        color: var(--text-light);
+        display: block;
+        margin-top: 5px;
+    }
+
+    #receiptPreview {
+        margin-top: 15px;
+        text-align: center;
+    }
+
+    #receiptPreview img {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #FF6B6B 0%, #EE5A52 100%);
+        border: none;
+        padding: 14px 30px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        transition: var(--transition);
+        flex: 1;
+        color: white;
+        text-decoration: none;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: white;
+        border: 2px solid var(--border);
+        color: var(--text);
+        padding: 14px 30px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        text-decoration: none;
+        text-align: center;
+        transition: var(--transition);
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-secondary:hover {
+        background: #FFF5F5;
+        border-color: #FF6B6B;
+        color: #FF6B6B;
+        transform: translateY(-2px);
+    }
+
+    /* Vendor Info */
+    .vendor-info {
+        font-size: 13px;
+        color: var(--text-light);
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .expense-container {
+            margin: 20px auto;
+        }
+        
+        .expense-card-header {
+            padding: 20px;
+        }
+        
+        .expense-card-body {
+            padding: 20px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .section-title {
+            font-size: 16px;
+        }
+        
+        .payment-method-options {
+            flex-direction: column;
+        }
+        
+        .payment-method-option {
+            min-width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .expense-card-header {
+            padding: 15px;
+        }
+        
+        .expense-card-body {
+            padding: 15px;
+        }
+        
+        .expense-card-header h2 {
+            font-size: 20px;
+        }
+        
+        .btn-primary,
+        .btn-secondary {
+            padding: 12px 20px;
+        }
+    }
+</style>
+
+<div class="expense-container">
+    <div class="expense-card">
+        <div class="expense-card-header">
+            <h2>
+                <i class="fas fa-money-bill-wave"></i>
+                Record New Expense
+            </h2>
+        </div>
+        
+        <div class="expense-card-body">
+            <form method="post" id="expenseForm" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Expense Details -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-receipt"></i>
+                        Expense Details
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">Expense Category</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-folder input-icon"></i>
+                            {{ form.category }}
+                        </div>
+                        {% if form.category.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ form.category.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ form.description.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Amount & Date -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-calculator"></i>
+                        Amount & Date
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">Amount (TSh)</label>
+                                <div class="input-with-icon input-with-currency">
+                                    <i class="fas fa-money-bill input-icon"></i>
+                                    <span class="currency-symbol">TSh</span>
+                                    {{ form.amount }}
+                                </div>
+                                {% if form.amount.errors %}
+                                    <div class="error-message">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {{ form.amount.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-calendar input-icon"></i>
+                                    {{ form.date }}
+                                </div>
+                                {% if form.date.errors %}
+                                    <div class="error-message">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {{ form.date.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vendor Information -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-store"></i>
+                        Vendor Information
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.vendor.id_for_label }}" class="form-label">Vendor</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user-tie input-icon"></i>
+                            {{ form.vendor }}
+                        </div>
+                        {% if form.vendor.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ form.vendor.errors }}
+                            </div>
+                        {% endif %}
+                        <div id="vendorInfo" class="vendor-info"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.vendor_reference.id_for_label }}" class="form-label">Invoice/Reference Number</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-hashtag input-icon"></i>
+                            {{ form.vendor_reference }}
+                        </div>
+                        {% if form.vendor_reference.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ form.vendor_reference.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-credit-card"></i>
+                        Payment Method
+                    </h3>
+                    
+                    <div class="payment-method-options">
+                        <div class="payment-method-option">
+                            <input type="radio" id="cash" name="payment_method" value="cash" checked>
+                            <label for="cash" class="payment-method-label">
+                                <i class="fas fa-money-bill"></i>
+                                Cash
+                            </label>
+                        </div>
+                        <div class="payment-method-option">
+                            <input type="radio" id="bank" name="payment_method" value="bank">
+                            <label for="bank" class="payment-method-label">
+                                <i class="fas fa-university"></i>
+                                Bank Transfer
+                            </label>
+                        </div>
+                        <div class="payment-method-option">
+                            <input type="radio" id="mobile" name="payment_method" value="mobile">
+                            <label for="mobile" class="payment-method-label">
+                                <i class="fas fa-mobile-alt"></i>
+                                Mobile Money
+                            </label>
+                        </div>
+                        <div class="payment-method-option">
+                            <input type="radio" id="credit" name="payment_method" value="credit">
+                            <label for="credit" class="payment-method-label">
+                                <i class="fas fa-credit-card"></i>
+                                Credit Card
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="paymentDetails" style="display: none; margin-top: 15px;">
+                        <div class="form-group">
+                            <label for="transaction_id" class="form-label">Transaction ID</label>
+                            <input type="text" id="transaction_id" name="transaction_id" class="form-control" placeholder="Enter transaction reference">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Receipt Upload -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-paperclip"></i>
+                        Receipt Attachment
+                    </h3>
+                    
+                    <label class="receipt-upload" for="receipt_file">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Upload Receipt</p>
+                        <small>Click to upload or drag and drop</small>
+                        <small>Supports JPG, PNG, PDF (Max 5MB)</small>
+                    </label>
+                    <input type="file" id="receipt_file" name="receipt_file" accept=".jpg,.jpeg,.png,.pdf" style="display: none;">
+                    
+                    <div id="receiptPreview"></div>
+                </div>
+
+                <!-- Expense Summary -->
+                <div class="expense-summary" id="expenseSummary">
+                    <div class="summary-item">
+                        <span class="summary-label">Amount:</span>
+                        <span class="summary-value" id="expenseAmount">0 TSh</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Payment Method:</span>
+                        <span class="summary-value" id="selectedPaymentMethod">Cash</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Date:</span>
+                        <span class="summary-value" id="expenseDate">{% now "F d, Y" %}</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Expense
+                    </button>
+                    <a href="{% url 'expense_list' %}" class="btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const expenseForm = document.getElementById('expenseForm');
+        const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
+        const dateInput = document.getElementById('{{ form.date.id_for_label }}');
+        const categorySelect = document.getElementById('{{ form.category.id_for_label }}');
+        const expenseSummary = document.getElementById('expenseSummary');
+        const expenseAmount = document.getElementById('expenseAmount');
+        const expenseDate = document.getElementById('expenseDate');
+        const selectedPaymentMethod = document.getElementById('selectedPaymentMethod');
+        const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
+        const paymentDetails = document.getElementById('paymentDetails');
+        const receiptFileInput = document.getElementById('receipt_file');
+        const receiptPreview = document.getElementById('receiptPreview');
+
+        // Set today's date as default
+        if (!dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+            expenseDate.textContent = formatDate(today);
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        // Update expense summary
+        function updateExpenseSummary() {
+            const amount = parseFloat(amountInput.value) || 0;
+            const date = dateInput.value ? formatDate(dateInput.value) : 'Not set';
+            const category = categorySelect.options[categorySelect.selectedIndex]?.text || 'Not selected';
+            
+            expenseAmount.textContent = amount.toLocaleString() + ' TSh';
+            expenseDate.textContent = date;
+            
+            // Show/hide summary
+            expenseSummary.style.display = amount > 0 ? 'block' : 'none';
+        }
+
+        // Handle payment method changes
+        paymentMethodInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                selectedPaymentMethod.textContent = this.nextElementSibling.textContent.trim();
+                
+                // Show transaction ID field for non-cash payments
+                if (this.value !== 'cash') {
+                    paymentDetails.style.display = 'block';
+                } else {
+                    paymentDetails.style.display = 'none';
+                }
+            });
+        });
+
+        // Handle receipt upload
+        receiptFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size exceeds 5MB limit');
+                    this.value = '';
+                    receiptPreview.innerHTML = '';
+                    return;
+                }
+                
+                if (!file.type.match('image.*') && file.type !== 'application/pdf') {
+                    alert('Please upload only images or PDF files');
+                    this.value = '';
+                    receiptPreview.innerHTML = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (file.type.match('image.*')) {
+                        receiptPreview.innerHTML = `
+                            <img src="${e.target.result}" alt="Receipt Preview">
+                            <p><small>${file.name}</small></p>
+                        `;
+                    } else {
+                        receiptPreview.innerHTML = `
+                            <i class="fas fa-file-pdf" style="font-size: 48px; color: #FF6B6B;"></i>
+                            <p><small>${file.name}</small></p>
+                        `;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Drag and drop for receipt upload
+        const receiptUploadArea = document.querySelector('.receipt-upload');
+        receiptUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#FF6B6B';
+            this.style.background = '#FFF5F5';
+        });
+
+        receiptUploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '';
+            this.style.background = '';
+        });
+
+        receiptUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '';
+            this.style.background = '';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                receiptFileInput.files = files;
+                receiptFileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Update summary on input changes
+        amountInput.addEventListener('input', updateExpenseSummary);
+        dateInput.addEventListener('change', updateExpenseSummary);
+        categorySelect.addEventListener('change', updateExpenseSummary);
+
+        // Initialize summary
+        updateExpenseSummary();
+
+        // Form validation
+        expenseForm.addEventListener('submit', function(e) {
+            let isValid = true;
+            const requiredFields = [amountInput, dateInput, categorySelect];
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            // Validate amount is positive
+            if (amountInput.value && parseFloat(amountInput.value) <= 0) {
+                amountInput.classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                // Scroll to first error
+                const firstError = expenseForm.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+
+        // Real-time validation
+        const inputs = expenseForm.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.hasAttribute('required') && !this.value.trim()) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+                
+                // Special validation for amount
+                if (this === amountInput && this.value && parseFloat(this.value) <= 0) {
+                    this.classList.add('is-invalid');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

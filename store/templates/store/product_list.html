@@ -1,0 +1,487 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Product Management{% endblock %}
+{% block page_subtitle %}Manage your motorcycle spare parts inventory{% endblock %}
+
+{% block content %}
+<style>
+    .products-header {
+        background: white;
+        padding: 25px 30px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 30px;
+        border-left: 4px solid var(--primary);
+    }
+
+    .add-product-btn {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: var(--transition);
+        box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+    }
+
+    .add-product-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
+        color: white;
+    }
+
+    .search-container {
+        background: white;
+        padding: 25px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 25px;
+    }
+
+    .search-input {
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 20px;
+        font-size: 15px;
+        transition: var(--transition);
+        background: #fafafa;
+    }
+
+    .search-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        background: white;
+        outline: none;
+    }
+
+    .search-btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        transition: var(--transition);
+    }
+
+    .search-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+    }
+
+    /* Products Grid */
+    .products-grid {
+        display: grid;
+        gap: 20px;
+    }
+
+    .product-card {
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 25px;
+        transition: var(--transition);
+        border-left: 4px solid var(--primary);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    }
+
+    .product-card.low-stock {
+        border-left-color: var(--warning);
+        background: linear-gradient(135deg, #fff3e0 0%, white 100%);
+    }
+
+    .product-card.low-stock::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--warning);
+    }
+
+    .product-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .product-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+    }
+
+    .product-brand {
+        color: var(--primary);
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    .product-model {
+        color: var(--text-light);
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .product-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+        padding: 20px;
+        background: var(--primary-light);
+        border-radius: var(--radius);
+    }
+
+    .detail-item {
+        text-align: center;
+    }
+
+    .detail-label {
+        font-size: 12px;
+        color: var(--text-light);
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .detail-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .detail-value.price { color: green; }
+    .detail-value.cost { color: var(--warning); }
+    .detail-value.profit { color: var(--success); }
+
+    /* Stock Information */
+    .stock-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .stock-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .stock-badge.normal {
+        background: rgba(46, 125, 50, 0.1);
+        color: var(--success);
+    }
+
+    .stock-badge.low {
+        background: rgba(245, 124, 0, 0.1);
+        color: var(--warning);
+    }
+
+    .stock-badge.critical {
+        background: rgba(198, 40, 40, 0.1);
+        color: #c62828;
+    }
+
+    /* Product Actions */
+    .product-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .action-btn {
+        flex: 1;
+        padding: 10px 15px;
+        border: 2px solid;
+        border-radius: var(--radius);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 13px;
+        text-align: center;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    .edit-btn {
+        background: rgba(25, 118, 210, 0.1);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .edit-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    .restock-btn {
+        background: rgba(34, 182, 42, 0.1);
+        border-color: green;
+        color: green;
+    }
+
+    .restock-btn:hover {
+        background: green;
+        color: white;
+    }
+
+    .delete-btn {
+        background: rgba(198, 40, 40, 0.1);
+        border-color: #c62828;
+        color: #c62828;
+    }
+
+    .delete-btn:hover {
+        background: #c62828;
+        color: white;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 30px;
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    .empty-state i {
+        font-size: 64px;
+        color: var(--border);
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        color: var(--text-light);
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: var(--text-light);
+        margin-bottom: 25px;
+    }
+
+    /* ========== RESPONSIVE DESIGN ========== */
+    
+    @media (max-width: 768px) {
+        .products-header {
+            padding: 20px;
+        }
+        
+        .product-header {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .product-details {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            padding: 15px;
+        }
+        
+        .product-actions {
+            flex-direction: column;
+        }
+        
+        .search-container {
+            padding: 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .products-header {
+            padding: 15px;
+        }
+        
+        .product-card {
+            padding: 20px;
+        }
+        
+        .stock-info {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .empty-state {
+            padding: 40px 20px;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+        }
+    }
+</style>
+
+<div class="products-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h1 class="page-title mb-2">Product Management</h1>
+            <p class="page-subtitle mb-0">Manage your motorcycle spare parts inventory</p>
+        </div>
+        <a href="{% url 'product_create' %}" class="add-product-btn">
+            <i class="fas fa-plus-circle"></i>
+            Add New Product
+        </a>
+    </div>
+</div>
+
+<div class="search-container">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-8">
+            <label for="searchInput" class="form-label">Search Products</label>
+            <input type="text" name="q" class="form-control search-input" id="searchInput" 
+                   placeholder="Search by name, brand, part number, or model..." value="{{ request.GET.q }}">
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn search-btn w-100">
+                <i class="fas fa-search me-2"></i>Search
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if products %}
+<div class="products-grid">
+    {% for product in products %}
+    <div class="product-card {% if product.quantity <= 5 %}low-stock{% endif %}">
+        <div class="product-header">
+            <div>
+                <div class="product-brand">{{ product.brand }}</div>
+                <h3 class="product-name">{{ product.name }}</h3>
+                <p class="product-model">{{ product.motorcycle_model }}</p>
+            </div>
+            <div class="text-end">
+                <div class="detail-label">Part Number</div>
+                <div class="detail-value">{{ product.part_number }}</div>
+            </div>
+        </div>
+
+        <div class="product-details">
+            <div class="detail-item">
+                <div class="detail-label">Current Stock</div>
+                <div class="detail-value">{{ product.quantity }} units</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Cost Price</div>
+                <div class="detail-value cost">{{ product.cost_price }} TSh</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Selling Price</div>
+                <div class="detail-value price">{{ product.selling_price }} TSh</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Profit Margin</div>
+                <div class="detail-value profit">
+                    {{ product.get_profit_margin }} TSh
+                </div>
+            </div>
+        </div>
+
+        <div class="stock-info">
+            {% if product.quantity <= 5 %}
+                <div class="stock-badge {% if product.quantity == 0 %}critical{% else %}low{% endif %}">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    {% if product.quantity == 0 %}
+                        Out of Stock
+                    {% else %}
+                        Low Stock ({{ product.quantity }} left)
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="stock-badge normal">
+                    <i class="fas fa-check-circle me-1"></i>
+                    In Stock
+                </div>
+            {% endif %}
+            
+            {% if product.quantity > 0 %}
+            <div class="stock-badge" style="background: rgba(25, 118, 210, 0.1); color: var(--primary);">
+                <i class="fas fa-chart-line me-1"></i>
+                {{ product.get_profit_percentage }}% Margin
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="product-actions">
+            <a href="{% url 'product_edit' product.id %}" class="action-btn edit-btn">
+                <i class="fas fa-edit"></i>Edit
+            </a>
+            <a href="{% url 'product_restock' product.id %}" class="action-btn restock-btn">
+                <i class="fas fa-box-open"></i>Restock
+            </a>
+            <a href="{% url 'product_delete' product.id %}" class="action-btn delete-btn">
+                <i class="fas fa-trash"></i>Delete
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-box-open"></i>
+    <h3>No Products Found</h3>
+    <p>{% if request.GET.q %}No products match your search criteria.{% else %}Get started by adding your first product to the inventory.{% endif %}</p>
+    <a href="{% url 'product_create' %}" class="add-product-btn">
+        <i class="fas fa-plus-circle"></i>
+        Add Your First Product
+    </a>
+</div>
+{% endif %}
+
+<script>
+    // Add interactive animations
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate product cards on load with staggered delay
+        const productCards = document.querySelectorAll('.product-card');
+        productCards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+
+        // Pre-set initial state for animation
+        productCards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+        });
+
+        // Add hover effects to action buttons
+        const actionBtns = document.querySelectorAll('.action-btn');
+        actionBtns.forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px) scale(1.02)';
+            });
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    });
+</script>
+{% endblock %}

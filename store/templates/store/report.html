@@ -1,0 +1,705 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Report Management{% endblock %}
+{% block page_subtitle %}View and manage all Sales Report transactions here{% endblock %}
+
+{% block content %}
+<style>
+    /* Tab Styling */
+    .nav-tabs {
+        border-bottom: 2px solid var(--border);
+        padding: 0 5px;
+    }
+    
+    .nav-tabs .nav-item {
+        margin-right: 5px;
+    }
+    
+    .nav-tabs .nav-link {
+        color: var(--text);
+        font-weight: 500;
+        border: none;
+        padding: 12px 20px;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius) var(--radius) 0 0;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transform: translateY(-2px);
+    }
+    
+    .nav-tabs .nav-link:not(.active):hover {
+        color: white;
+        border: none;
+        border-radius: var(--radius) var(--radius) 0 0;
+        transform: translateY(-1px);
+    }
+    
+    /* Individual tab colors */
+    .nav-tabs .nav-link[data-bs-target="#day-sales"].active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#daily"].active {
+        background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#monthly"].active {
+        background: linear-gradient(135deg, #ff9800 0%, #ef6c00 100%);
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#custom"].active {
+        background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#top"].active {
+        background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#low"].active {
+        background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+    }
+    
+    /* Hover effects */
+    .nav-tabs .nav-link[data-bs-target="#day-sales"]:not(.active):hover {
+        background: linear-gradient(135deg, var(--primary-light) 0%, #bbdefb 100%);
+        color: var(--primary);
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#daily"]:not(.active):hover {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        color: #2e7d32;
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#monthly"]:not(.active):hover {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        color: #ef6c00;
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#custom"]:not(.active):hover {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #1976d2;
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#top"]:not(.active):hover {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        color: #7b1fa2;
+    }
+    
+    .nav-tabs .nav-link[data-bs-target="#low"]:not(.active):hover {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        color: #c62828;
+    }
+
+    /* Card Styling */
+    .report-card {
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 0;
+        border: none;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 20px 25px;
+        border-bottom: none;
+    }
+
+    .card-header.bg-success {
+        background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%) !important;
+    }
+
+    .card-header.bg-warning {
+        background: linear-gradient(135deg, #ff9800 0%, #ef6c00 100%) !important;
+        color: white !important;
+    }
+
+    .card-header.bg-info {
+        background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
+    }
+
+    .card-header.bg-purple {
+        background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%) !important;
+    }
+
+    .card-header.bg-danger {
+        background: linear-gradient(135deg, #f44336 0%, #c62828 100%) !important;
+    }
+
+    .card-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .download-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 6px 12px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .download-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    /* Table Styling */
+    .table-responsive {
+        border-radius: 0 0 var(--radius) var(--radius);
+    }
+
+    .table {
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table thead th {
+        background: var(--primary-light);
+        border-bottom: 2px solid var(--border);
+        padding: 15px 20px;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 14px;
+    }
+
+    .table tbody td {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+
+    .table tbody tr {
+        transition: var(--transition);
+    }
+
+    .table tbody tr:hover {
+        background: var(--primary-light);
+        transform: translateX(5px);
+    }
+
+    /* Low stock highlighting */
+    .low-stock {
+        background-color: #fff3e0 !important;
+        border-left: 4px solid var(--warning);
+    }
+
+    .low-stock:hover {
+        background-color: #ffe0b2 !important;
+    }
+
+    /* Badge Styling */
+    .badge {
+        padding: 6px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .badge.bg-success { background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%) !important; }
+    .badge.bg-warning { background: linear-gradient(135deg, #ff9800 0%, #ef6c00 100%) !important; }
+    .badge.bg-danger { background: linear-gradient(135deg, #f44336 0%, #c62828 100%) !important; }
+    .badge.bg-purple { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%) !important; }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-light);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    /* Form Styling */
+    .filter-form .form-control, .filter-form .form-select {
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        font-size: 14px;
+        background: #fafafa;
+    }
+
+    .filter-form .form-control:focus, .filter-form .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        background: white;
+    }
+
+    /* Summary Row */
+    .summary-row {
+        background: var(--primary-light) !important;
+        font-weight: 700;
+        font-size: 15px;
+    }
+
+    .summary-row td {
+        border-top: 2px solid var(--border) !important;
+    }
+
+    /* ========== RESPONSIVE DESIGN ========== */
+    
+    @media (max-width: 768px) {
+        .nav-tabs .nav-link {
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+        }
+        
+        .card-header h3 {
+            font-size: 16px;
+        }
+        
+        .table thead th,
+        .table tbody td {
+            padding: 10px 15px;
+            font-size: 13px;
+        }
+        
+        .download-btn {
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .nav-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        
+        .nav-tabs .nav-item {
+            flex-shrink: 0;
+        }
+        
+        .filter-form .row {
+            flex-direction: column;
+        }
+        
+        .filter-form .col-md-3,
+        .filter-form .col-md-2 {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+    }
+</style>
+
+<div class="reports-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title mb-2">Reports & Analytics</h1>
+            <p class="page-subtitle mb-0">Comprehensive sales and inventory reports</p>
+        </div>
+    </div>
+</div>
+
+<ul class="nav nav-tabs" id="reportTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#day-sales" type="button" role="tab">
+            <i class="fas fa-receipt me-2"></i>Today's Sales
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab">
+            <i class="fas fa-calendar-day me-2"></i>Daily Sales
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab">
+            <i class="fas fa-calendar-alt me-2"></i>Monthly Sales
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#custom" type="button" role="tab">
+            <i class="fas fa-filter me-2"></i>Custom Report
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#top" type="button" role="tab">
+            <i class="fas fa-trophy me-2"></i>Top Products
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#low" type="button" role="tab">
+            <i class="fas fa-exclamation-triangle me-2"></i>Low Stock
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content mt-4">
+    <!-- Today's Sales Tab -->
+    <div class="tab-pane fade show active" id="day-sales" role="tabpanel">
+        <div class="report-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3><i class="fas fa-receipt me-2"></i>Today's Transactions</h3>
+                <a href="{% url 'download_day_sales_pdf' %}" class="download-btn">
+                    <i class="fas fa-file-pdf me-1"></i>Download PDF
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Time</th>
+                                <th>Product</th>
+                                <th>Brand</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>Discount</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in day_sales %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ sale.created_at|time:"H:i" }}</td>
+                                <td>{{ sale.product.name }}</td>
+                                <td>{{ sale.product.brand }}</td>
+                                <td><span class="badge bg-primary">{{ sale.quantity }}</span></td>
+                                <td>{{ sale.product.selling_price }} TSh</td>
+                                <td>{{ sale.discount|default:"0" }} TSh</td>
+                                <td><strong>{{ sale.total_price }} TSh</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="fas fa-box-open"></i>
+                                        <p>No transactions recorded today.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Sales Tab -->
+    <div class="tab-pane fade" id="daily" role="tabpanel">
+        <div class="report-card">
+            <div class="card-header bg-success d-flex justify-content-between align-items-center">
+                <h3><i class="fas fa-calendar-day me-2"></i>Daily Sales (Last 30 Days)</h3>
+                <a href="{% url 'download_daily_sales_pdf' %}" class="download-btn">
+                    <i class="fas fa-file-pdf me-1"></i>Download PDF
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Total Sales</th>
+                                <th>Quantity Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for day in daily_sales %}
+                            <tr>
+                                <td><strong>{{ day.date }}</strong></td>
+                                <td><strong>{{ day.total_sales|default:0 }} TSh</strong></td>
+                                <td><span class="badge bg-success">{{ day.total_quantity|default:0 }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="fas fa-chart-line"></i>
+                                        <p>No sales data available.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Sales Tab -->
+    <div class="tab-pane fade" id="monthly" role="tabpanel">
+        <div class="report-card">
+            <div class="card-header bg-warning d-flex justify-content-between align-items-center">
+                <h3><i class="fas fa-calendar-alt me-2"></i>Monthly Sales (Current Year)</h3>
+                <a href="{% url 'download_monthly_sales_pdf' %}" class="download-btn">
+                    <i class="fas fa-file-pdf me-1"></i>Download PDF
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Total Sales</th>
+                                <th>Quantity Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for month in monthly_sales %}
+                            <tr>
+                                <td><strong>{{ month.month_name|default:"Month "|add:month.month }}</strong></td>
+                                <td><strong>{{ month.total_sales|default:0 }} TSh</strong></td>
+                                <td><span class="badge bg-warning">{{ month.total_quantity|default:0 }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="fas fa-chart-bar"></i>
+                                        <p>No monthly data available.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <!-- Custom Report Tab -->
+<div class="tab-pane fade" id="custom" role="tabpanel">
+    <div class="report-card">
+        <div class="card-header bg-info d-flex justify-content-between align-items-center">
+            <h3><i class="fas fa-filter me-2"></i>Custom Report</h3>
+            <a href="{% url 'download_custom_report_pdf' %}?{{ request.GET.urlencode }}" class="download-btn">
+                <i class="fas fa-file-pdf me-1"></i>Download PDF
+            </a>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 mb-4 filter-form">
+                <div class="col-md-3">
+                    <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
+                    {{ form.end_date }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.product.id_for_label }}" class="form-label">Product</label>
+                    {{ form.product }}
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+
+            {% if sales %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Unit Price</th>
+                            <th>Discount</th>
+                            <th>Total</th>
+                            <th>Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ sale.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ sale.product.name }}</td>
+                            <td><span class="badge bg-info">{{ sale.quantity }}</span></td>
+                            <td>{{ sale.product.selling_price }} TSh</td>
+                            <td>{{ sale.discount|default:"0" }} TSh</td>
+                            <td><strong>{{ sale.total_price }} TSh</strong></td>
+                           <td>
+    <strong class="{% if sale.profit > 0 %}text-success{% elif sale.profit < 0 %}text-danger{% else %}text-warning{% endif %}">
+        {{ sale.profit|floatformat:0 }} TSh
+    </strong>
+</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="summary-row">
+                            <td colspan="6" class="text-end"><strong>Grand Total:</strong></td>
+                            <td><strong>{{ total_sales }} TSh</strong></td>
+                            <td>
+                                <strong class="{% if total_profit > 0 %}text-success{% elif total_profit < 0 %}text-danger{% else %}text-warning{% endif %}">
+                                    {{ total_profit|default:0|floatformat:0 }} TSh
+                                </strong>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <p>No sales data for this filter.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+    <!-- Top Products Tab -->
+    <div class="tab-pane fade" id="top" role="tabpanel">
+        <div class="report-card">
+            <div class="card-header bg-purple d-flex justify-content-between align-items-center">
+                <h3><i class="fas fa-trophy me-2"></i>Top 5 Selling Products</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Brand</th>
+                                <th>Total Sold</th>
+                                <th>Total Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in top_products %}
+                            <tr>
+                                <td><strong>{{ product.product__name }}</strong></td>
+                                <td>{{ product.product__brand }}</td>
+                                <td><span class="badge bg-purple">{{ product.total_sold }}</span></td>
+                                <td><strong>{{ product.total_revenue }} TSh</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="fas fa-trophy"></i>
+                                        <p>No top products data available.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Tab -->
+    <div class="tab-pane fade" id="low" role="tabpanel">
+        <div class="report-card">
+            <div class="card-header bg-danger d-flex justify-content-between align-items-center">
+                <h3><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Items (≤ 5 units)</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Brand</th>
+                                <th>Current Stock</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in low_stock %}
+                            <tr class="low-stock">
+                                <td><strong>{{ product.name }}</strong></td>
+                                <td>{{ product.brand }}</td>
+                                <td>
+                                    <span class="badge {% if product.quantity == 0 %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ product.quantity }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'product_restock' product.id %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus-circle me-1"></i>Restock
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        <p class="text-success">No low stock items. Great job!</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Restore last active tab after reload
+    const activeTab = localStorage.getItem("activeTab");
+    if (activeTab) {
+        const triggerEl = document.querySelector(`button[data-bs-target="${activeTab}"]`);
+        if (triggerEl) {
+            const tab = new bootstrap.Tab(triggerEl);
+            tab.show();
+        }
+    }
+
+    // Save the active tab when clicked
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tabEl => {
+        tabEl.addEventListener('shown.bs.tab', function (event) {
+            localStorage.setItem("activeTab", event.target.getAttribute("data-bs-target"));
+        });
+    });
+
+    // Add animation to table rows
+    const tableRows = document.querySelectorAll('.table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.animationDelay = `${index * 0.05}s`;
+        row.classList.add('animate__animated', 'animate__fadeIn');
+    });
+});
+</script>
+{% endblock %}

@@ -68,11 +68,11 @@ import os
 DATABASES = {
  'default': {
   'ENGINE': 'django.db.backends.postgresql',
-  'NAME': os.getenv("DB_NAME"),
-  'USER': os.getenv("DB_USER"),
-  'PASSWORD': os.getenv("DB_PASSWORD"),
-  'HOST': os.getenv("DB_HOST"),
-  'PORT': os.getenv("DB_PORT"),
+  'NAME': 'stockrider_db',
+  'USER': 'postgres',
+  'PASSWORD': 'passkey379',
+  'HOST': 'localhost',
+  'PORT': '5432',
  }
 }
 
@@ -100,7 +100,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Dar_es_Salaam'
 
 USE_I18N = True
 

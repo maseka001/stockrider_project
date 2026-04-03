@@ -68,9 +68,9 @@ import os
 DATABASES = {
  'default': {
   'ENGINE': 'django.db.backends.postgresql',
-  'NAME': 'stockrider_db',
-  'USER': 'postgres',
-  'PASSWORD': 'passkey379',
+  'NAME': '',
+  'USER': '',
+  'PASSWORD': '',
   'HOST': 'localhost',
   'PORT': '5432',
  }
